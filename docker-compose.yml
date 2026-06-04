@@ -1,0 +1,15 @@
+services:
+  postgres:
+    image: postgres:16
+    container_name: jobscout_postgres
+    environment:
+      POSTGRES_USER: jobscout
+      POSTGRES_PASSWORD: jobscout123
+      POSTGRES_DB: jobscout_ai
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:
