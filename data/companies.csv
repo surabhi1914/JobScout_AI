@@ -1,5 +1,6 @@
 company,career_url,ats_type,ats_slug,workday_tenant,workday_site,workday_server,keywords,locations,priority
 OpenAI,https://openai.com/careers/search/,ashby,openai,,,,machine learning;data scientist;ai engineer;software engineer,United States;Remote,high
 Anthropic,https://www.anthropic.com/jobs,greenhouse,anthropic,,,,machine learning;data scientist;ai engineer;software engineer,United States;Remote,high
-Netflix,https://jobs.netflix.com/,lever,netflix,,,,machine learning;data scientist;software engineer,United States;Remote,medium
+Netflix,https://explore.jobs.netflix.net/careers,custom_netflix,,,,,machine learning;data scientist;software engineer,United States;Remote,medium
 Workday,https://workday.wd5.myworkdayjobs.com/Workday,workday,,workday,Workday,wd5,machine learning;data scientist;software engineer,United States;Remote,medium
+Spotify,https://www.lifeatspotify.com/jobs,lever,spotify,,,,machine learning;data scientist;software engineer;ai,United States;Remote,high
