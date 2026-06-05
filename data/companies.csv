@@ -1,6 +1,7 @@
 company,career_url,ats_type,ats_slug,workday_tenant,workday_site,workday_server,keywords,is_active
-OpenAI,https://openai.com/careers/search/,ashby,openai,,,,machine learning;data scientist;ai engineer;software engineer,TRUE
-Anthropic,https://www.anthropic.com/jobs,greenhouse,anthropic,,,,machine learning;data scientist;ai engineer;software engineer,TRUE
-Workday,https://workday.wd5.myworkdayjobs.com/Workday,workday,,workday,Workday,wd5,machine learning;data scientist;software engineer,TRUE
-Spotify,https://www.lifeatspotify.com/jobs,greenhouse,spotify,,,,machine learning;data scientist;ai engineer;software engineer,TRUE
-Netflix,https://explore.jobs.netflix.net/careers,custom_netflix,,,,,machine learning;data scientist;software engineer,FALSE
+OpenAI,https://openai.com/careers/search/,ashby,openai,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE
+Anthropic,https://www.anthropic.com/jobs,greenhouse,anthropic,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE
+Workday,https://workday.wd5.myworkdayjobs.com/Workday,workday,,workday,Workday,wd5,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE
+Spotify,https://www.lifeatspotify.com/jobs,greenhouse,spotify,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE
+Netflix,https://explore.jobs.netflix.net/careers,custom_netflix,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,FALSE
+ThermoFisher,https://thermofisher.wd5.myworkdayjobs.com/ThermoFisherCareers/,workday,,thermofisher,ThermoFisherCareers,wd5,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE
