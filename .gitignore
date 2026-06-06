@@ -13,6 +13,9 @@ venv/
 env/
 .venv/
 
+# Streamlit
+.streamlit/
+
 # Packaging
 build/
 dist/

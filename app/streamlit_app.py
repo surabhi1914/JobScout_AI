@@ -1,9 +1,10 @@
-import os # File handing
+import os # File handling
 import pandas as pd # Data handling
 import streamlit as st #web app framework
 from pathlib import Path
 from dotenv import load_dotenv # handling environment variables
 from sqlalchemy import create_engine, text #Data connection queries
+from html import escape
 
 
 # -----------------------------
@@ -34,10 +35,28 @@ def get_engine():
 
 engine = get_engine()
 
+# -------------------------------------------------
+# Theme / styling
+# -------------------------------------------------
+APP_DIR = Path(__file__).resolve().parent
+CSS_PATH = APP_DIR / "styles.css"
 
-# -----------------------------
+
+def inject_css(css_path=CSS_PATH):
+    """Load dashboard CSS from an external stylesheet."""
+    if not css_path.exists():
+        st.warning(f"CSS file not found: {css_path}")
+        return
+
+    st.markdown(
+        f"<style>{css_path.read_text(encoding='utf-8')}</style>",
+        unsafe_allow_html=True
+    )
+
+
+# -------------------------------------------------
 # Data loading
-# -----------------------------
+# -------------------------------------------------
 @st.cache_data(ttl=300)
 def load_jobs():
     query = """
@@ -47,11 +66,14 @@ def load_jobs():
         jp.title,
         jp.location,
         jp.job_url,
+        jp.description,
         jp.ats_type,
         jp.posted_date,
         jp.posted_datetime,
         jp.freshness_status,
         jp.date_found,
+        jp.first_seen,
+        jp.last_seen,
         js.keyword_match_count,
         js.matched_keywords,
         js.role_score,
@@ -84,7 +106,7 @@ def load_jobs():
 
 
 def update_job_status(job_id, new_status):
-    with engine.begin() as conn: 
+    with engine.begin() as conn:
         conn.execute(
             text("""
                 UPDATE application_status
@@ -104,238 +126,625 @@ def update_job_status(job_id, new_status):
 
     st.cache_data.clear() #refreshes dashboard data after status update
 
+# -------------------------------------------------
+# Utility helpers
+# -------------------------------------------------
+def safe_text(value, fallback="Not available"):
+    value = str(value).strip()
+    if value.lower() in ["", "none", "nan", "null"]:
+        return fallback
+    return value
 
-# -----------------------------
-# Header
-# -----------------------------
-st.title("🧭 JobScout AI")
-st.caption("Multi-agent job tracking, ATS scoring, and application dashboard")
+def clean_display_text(value, fallback="Not available"):
+    value = safe_text(value, fallback="")
+    value = " ".join(value.split())
+    return value if value else fallback
 
+
+def truncate_text(value, max_chars=280):
+    value = clean_display_text(value, fallback="")
+    if len(value) <= max_chars:
+        return value
+    return value[:max_chars].rsplit(" ", 1)[0] + "..."
+
+def render_badges(items, style="green", limit=10):
+    if not items:
+        return ""
+
+    return " ".join(
+        badge_html(escape(str(item)), style)
+        for item in items[:limit]
+    )
+
+def badge_html(text, style="green"):
+    class_map = {
+        "green": "badge",
+        "blue": "badge-blue",
+        "warning": "badge-warning",
+        "danger": "badge-danger"
+    }
+    cls = class_map.get(style, "badge")
+    return f"<span class='{cls}'>{text}</span>"
+
+def is_empty_flag(value):
+    value = str(value).strip().lower()
+    return value in ["", "none", "nan", "null", "[]"]
+
+
+def split_semicolon_text(value):
+    if is_empty_flag(value):
+        return []
+    return [x.strip() for x in str(value).split(";") if x.strip()]
+
+
+
+def score_color(score):
+    if score >= 80:
+        return "🟢"
+    if score >= 65:
+        return "🟡"
+    if score >= 50:
+        return "🟠"
+    return "🔴"
+
+
+def make_metric_card(label, value):
+    st.markdown(
+        f"""
+        <div class="metric-card">
+            <div class="metric-label">{label}</div>
+            <div class="metric-value">{value}</div>
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+# -------------------------------------------------
+# Job detail modal
+# -------------------------------------------------
+@st.dialog("JobScout Position Report", width="large")
+def show_job_dialog(job):
+    description = safe_text(job.get("description", ""), "No job description captured yet.")
+    matched_skills = split_semicolon_text(job.get("matched_skills", ""))
+    missing_keywords = split_semicolon_text(job.get("missing_keywords", ""))
+    seniority_flags = split_semicolon_text(job.get("seniority_flags", ""))
+    matched_roles = split_semicolon_text(job.get("matched_roles", ""))
+    project_hits = split_semicolon_text(job.get("project_relevance_hits", ""))
+
+    st.markdown(f"## {safe_text(job.get('title'))}")
+    st.markdown(
+        f"""
+        {badge_html(safe_text(job.get('company')), "blue")}
+        {badge_html("Score " + str(int(job.get("ats_match_score", 0))), "green")}
+        {badge_html(safe_text(job.get("score_label")), "green")}
+        {badge_html(safe_text(job.get("freshness_status")), "warning")}
+        {badge_html(safe_text(job.get("ats_type")), "blue")}
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.markdown("")
+
+    top_left, top_right = st.columns([2, 1])
+
+    with top_left:
+        st.markdown(
+            f"""
+            <div class="detail-box">
+                <b>Company:</b> {safe_text(job.get("company"))}<br>
+                <b>Location:</b> {safe_text(job.get("location"))}<br>
+                <b>Posted at:</b> {safe_text(job.get("posted_date"))}<br>
+                <b>Found by JobScout:</b> {safe_text(job.get("date_found"))}<br>
+                <b>First seen:</b> {safe_text(job.get("first_seen"))}<br>
+                <b>Current status:</b> {safe_text(job.get("status"))}
+            </div>
+            """,
+            unsafe_allow_html=True
+        )
+
+    with top_right:
+        st.metric("ATS Match", int(job.get("ats_match_score", 0)))
+        st.metric("Keyword Hits", int(job.get("keyword_match_count", 0) or 0))
+
+    st.markdown("### Score Breakdown")
+
+    c1, c2, c3, c4, c5 = st.columns(5)
+    c1.metric("Role", int(job.get("role_score", 0)))
+    c2.metric("Skills", int(job.get("skill_score", 0)))
+    c3.metric("Project", int(job.get("project_score", 0)))
+    c4.metric("Experience", int(job.get("experience_score", 0)))
+    c5.metric("Freshness", int(job.get("freshness_score", 0)))
+
+    st.markdown("### JobScout Analysis")
+    st.write(safe_text(job.get("score_reason"), "No score reason available."))
+
+    st.markdown("### Matched Role Signals")
+    if matched_roles:
+        st.markdown(" ".join([badge_html(x, "blue") for x in matched_roles[:20]]), unsafe_allow_html=True)
+    else:
+        st.caption("No role signals found.")
+
+    st.markdown("### Matched Skills")
+    if matched_skills:
+        st.markdown(" ".join([badge_html(x, "green") for x in matched_skills[:30]]), unsafe_allow_html=True)
+    else:
+        st.caption("No matched skills found.")
+
+    st.markdown("### Project Relevance Signals")
+    if project_hits:
+        st.markdown(" ".join([badge_html(x, "blue") for x in project_hits[:20]]), unsafe_allow_html=True)
+    else:
+        st.caption("No project relevance signals found.")
+
+    st.markdown("### Seniority Warnings")
+    if seniority_flags:
+        st.markdown(" ".join([badge_html(x, "danger") for x in seniority_flags]), unsafe_allow_html=True)
+    else:
+        st.success("No seniority flags found.")
+
+    st.markdown("### Missing Keywords")
+    if missing_keywords:
+        st.write(", ".join(missing_keywords[:30]))
+    else:
+        st.caption("No missing keywords listed.")
+
+    st.markdown("### Job Description")
+    st.markdown(
+        f"""
+        <div class="description-box">
+            {description}
+        </div>
+        """,
+        unsafe_allow_html=True
+    )
+
+    st.divider()
+
+    a1, a2, a3, a4 = st.columns(4)
+
+    with a1:
+        st.link_button("Apply Now", job["job_url"], use_container_width=True)
+
+    with a2:
+        if st.button("Save Job", use_container_width=True):
+            update_job_status(job["job_id"], "saved")
+            st.toast("Saved job")
+            st.rerun()
+
+    with a3:
+        if st.button("Mark Applied", use_container_width=True):
+            update_job_status(job["job_id"], "applied")
+            st.toast("Marked as applied")
+            st.rerun()
+
+    with a4:
+        if st.button("Ignore", use_container_width=True):
+            update_job_status(job["job_id"], "ignored")
+            st.toast("Ignored job")
+            st.rerun()
+
+# -------------------------------------------------
+# App start
+# -------------------------------------------------
 jobs_df = load_jobs()
 
 if jobs_df.empty:
-    st.warning("No jobs found in PostgreSQL yet. Run notebooks 02, 03, and 04 first.")
+    st.warning("No jobs found yet. Run notebooks 02, 03, and 04 first.")
     st.stop()
 
+# add helper boolean
+jobs_df["has_seniority_flags"] = ~jobs_df["seniority_flags"].apply(is_empty_flag)
 
-# -----------------------------
-# Sidebar filters
-# -----------------------------
-st.sidebar.header("Filters")
+# # sidebar theme toggle
+# st.sidebar.markdown("## Settings")
+# dark_mode = st.sidebar.toggle("Dark mode", value=True)
+# inject_css(dark_mode)
 
-min_score = st.sidebar.slider(
-    "Minimum ATS score",
-    min_value=0,
-    max_value=100,
-    value=50,
-    step=5
+inject_css()
+
+
+st.markdown(
+    """
+    <div class="hero-card">
+        <div class="hero-title">🧭 JobScout AI</div>
+        <div class="hero-subtitle">
+            A personal career intelligence dashboard that scans company job boards,
+            scores roles against your profile, flags seniority risks, and helps you focus
+            on the positions most worth applying to.
+        </div>
+    </div>
+    """,
+    unsafe_allow_html=True
 )
 
-companies = sorted(jobs_df["company"].dropna().unique().tolist())
-selected_companies = st.sidebar.multiselect(
-    "Companies",
-    options=companies,
-    default=companies
-)
-
-score_labels = sorted(jobs_df["score_label"].dropna().unique().tolist())
-selected_labels = st.sidebar.multiselect(
-    "Score labels",
-    options=score_labels,
-    default=score_labels
-)
-
-freshness_options = sorted(jobs_df["freshness_status"].dropna().unique().tolist())
-selected_freshness = st.sidebar.multiselect(
-    "Freshness",
-    options=freshness_options,
-    default=freshness_options
-)
-
-status_options = sorted(jobs_df["status"].dropna().unique().tolist())
-selected_statuses = st.sidebar.multiselect(
-    "Application status",
-    options=status_options,
-    default=status_options
-)
-
-show_relevant_only = st.sidebar.checkbox(
-    "Show relevant jobs only",
-    value=True
+# -------------------------------------------------
+# Global tabs
+# -------------------------------------------------
+career_tab, search_tab = st.tabs(
+    [
+        "📊 My Career Page",
+        "🔎 Search Jobs"
+    ]
 )
 
 
-# -----------------------------
-# Apply filters
-# -----------------------------
-filtered_df = jobs_df.copy()
+# -------------------------------------------------
+# Tab A: My Career Page
+# -------------------------------------------------
+with career_tab:
+    total_jobs = len(jobs_df)
+    total_applied = int((jobs_df["status"] == "applied").sum())
+    strong_matches = int((jobs_df["ats_match_score"] >= 80).sum())
+    relevant_jobs = int((jobs_df["is_relevant"] == True).sum())
 
-filtered_df = filtered_df[
-    (filtered_df["ats_match_score"] >= min_score)
-    & (filtered_df["company"].isin(selected_companies))
-    & (filtered_df["score_label"].isin(selected_labels))
-    & (filtered_df["freshness_status"].isin(selected_freshness))
-    & (filtered_df["status"].isin(selected_statuses))
-]
+    # filtered jobs here means default clean candidate pool:
+    # relevant + no seniority flags
+    filtered_jobs = jobs_df[
+        (jobs_df["is_relevant"] == True)
+        & (jobs_df["has_seniority_flags"] == False)
+    ]
 
-if show_relevant_only:
-    filtered_df = filtered_df[filtered_df["is_relevant"] == True]
+    st.subheader("Career Snapshot")
 
+    m1, m2, m3, m4, m5 = st.columns(5)
+    with m1:
+        make_metric_card("Total Applied", total_applied)
+    with m2:
+        make_metric_card("Total Jobs", total_jobs)
+    with m3:
+        make_metric_card("Filtered Jobs", len(filtered_jobs))
+    with m4:
+        make_metric_card("Strong Matches", strong_matches)
+    with m5:
+        make_metric_card("Relevant Jobs", relevant_jobs)
 
-# -----------------------------
-# Summary metrics
-# -----------------------------
-col1, col2, col3, col4 = st.columns(4)
+    st.markdown("### Quick Analytics")
 
-col1.metric("Total jobs", len(jobs_df))
-col2.metric("Filtered jobs", len(filtered_df))
-col3.metric("Strong matches", int((jobs_df["ats_match_score"] >= 80).sum()))
-col4.metric("Relevant jobs", int((jobs_df["is_relevant"] == True).sum()))
+    left, right = st.columns(2)
 
-
-# -----------------------------
-# Main table
-# -----------------------------
-st.subheader("Top job matches")
-
-display_columns = [
-    "company",
-    "title",
-    "location",
-    "ats_match_score",
-    "score_label",
-    "freshness_status",
-    "matched_skills",
-    "seniority_flags",
-    "status",
-    "job_url"
-]
-
-table_df = filtered_df[display_columns].copy()
-
-st.dataframe(
-    table_df,
-    use_container_width=True,
-    hide_index=True,
-    column_config={
-        "job_url": st.column_config.LinkColumn("Apply link"),
-        "ats_match_score": st.column_config.ProgressColumn(
-            "ATS score",
-            min_value=0,
-            max_value=100
+    with left:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
+        st.markdown("#### Average ATS score by company")
+        avg_score_df = (
+            jobs_df.groupby("company")["ats_match_score"]
+            .mean()
+            .round(1)
+            .reset_index()
+            .sort_values("ats_match_score", ascending=False)
         )
-    }
-)
+        st.bar_chart(avg_score_df, x="company", y="ats_match_score")
+        st.markdown("</div>", unsafe_allow_html=True)
 
+    with right:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
+        st.markdown("#### Jobs by application status")
+        status_df = (
+            jobs_df["status"]
+            .value_counts()
+            .reset_index()
+        )
+        status_df.columns = ["status", "count"]
+        st.bar_chart(status_df, x="status", y="count")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-# -----------------------------
-# Job detail panel
-# -----------------------------
-st.subheader("Job detail")
+    left2, right2 = st.columns(2)
 
-if filtered_df.empty:
-    st.info("No jobs match the current filters.")
-    st.stop()
+    with left2:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
+        st.markdown("#### Score label distribution")
+        label_df = (
+            jobs_df["score_label"]
+            .value_counts()
+            .reset_index()
+        )
+        label_df.columns = ["score_label", "count"]
+        st.bar_chart(label_df, x="score_label", y="count")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-filtered_df["job_label"] = (
-    filtered_df["company"].astype(str)
-    + " | "
-    + filtered_df["title"].astype(str)
-    + " | Score: "
-    + filtered_df["ats_match_score"].astype(str)
-)
+    with right2:
+        st.markdown('<div class="section-card">', unsafe_allow_html=True)
+        st.markdown("#### Freshness distribution")
+        freshness_df = (
+            jobs_df["freshness_status"]
+            .value_counts()
+            .reset_index()
+        )
+        freshness_df.columns = ["freshness_status", "count"]
+        st.bar_chart(freshness_df, x="freshness_status", y="count")
+        st.markdown("</div>", unsafe_allow_html=True)
 
-selected_label = st.selectbox(
-    "Select a job",
-    filtered_df["job_label"].tolist()
-)
+    st.markdown("### Top companies by strong matches")
 
-selected_job = filtered_df[
-    filtered_df["job_label"] == selected_label
-].iloc[0]
-
-
-left, right = st.columns([2, 1])
-
-with left:
-    st.markdown(f"### {selected_job['title']}")
-    st.markdown(f"**Company:** {selected_job['company']}")
-    st.markdown(f"**Location:** {selected_job['location']}")
-    st.markdown(f"**ATS:** {selected_job['ats_type']}")
-    st.markdown(f"**Freshness:** {selected_job['freshness_status']}")
-    st.markdown(f"**Current status:** `{selected_job['status']}`")
-
-    st.markdown("#### Score reason")
-    st.write(selected_job["score_reason"])
-
-    st.markdown("#### Matched skills")
-    st.write(selected_job["matched_skills"])
-
-    st.markdown("#### Missing keywords")
-    st.write(selected_job["missing_keywords"])
-
-    st.markdown("#### Seniority flags")
-    st.write(selected_job["seniority_flags"])
-
-with right:
-    st.metric("ATS Match Score", int(selected_job["ats_match_score"]))
-    st.metric("Role Score", int(selected_job["role_score"]))
-    st.metric("Skill Score", int(selected_job["skill_score"]))
-    st.metric("Project Score", int(selected_job["project_score"]))
-    st.metric("Experience Score", int(selected_job["experience_score"]))
-    st.metric("Freshness Score", int(selected_job["freshness_score"]))
-
-    st.link_button("Apply", selected_job["job_url"])
-
-    st.markdown("#### Update status")
-
-    if st.button("Save job"):
-        update_job_status(selected_job["job_id"], "saved")
-        st.rerun()
-
-    if st.button("Mark applied"):
-        update_job_status(selected_job["job_id"], "applied")
-        st.rerun()
-
-    if st.button("Ignore"):
-        update_job_status(selected_job["job_id"], "ignored")
-        st.rerun()
-
-
-# -----------------------------
-# Analytics section
-# -----------------------------
-st.subheader("Quick analytics")
-
-analytics_col1, analytics_col2 = st.columns(2)
-
-with analytics_col1:
-    st.markdown("#### Average score by company")
-    avg_score_df = (
-        jobs_df.groupby("company")["ats_match_score"]
-        .mean()
-        .reset_index()
-        .sort_values("ats_match_score", ascending=False)
+    company_strong_df = (
+        jobs_df[jobs_df["ats_match_score"] >= 80]
+        .groupby("company")
+        .size()
+        .reset_index(name="strong_matches")
+        .sort_values("strong_matches", ascending=False)
     )
 
     st.dataframe(
-        avg_score_df,
+        company_strong_df,
         use_container_width=True,
         hide_index=True
     )
 
-with analytics_col2:
-    st.markdown("#### Jobs by status")
-    status_df = (
-        jobs_df["status"]
-        .value_counts()
-        .reset_index()
+
+# -------------------------------------------------
+# Tab B: Search Jobs
+# -------------------------------------------------
+with search_tab:
+    st.subheader("Search Jobs")
+
+    st.markdown("Use filters to find jobs worth applying to. The seniority filter is ON by default.")
+
+    f1, f2, f3, f4 = st.columns([1, 1, 1, 1])
+
+    with f1:
+        min_score = st.slider(
+            "Minimum ATS score",
+            min_value=0,
+            max_value=100,
+            value=50,
+            step=5
+        )
+
+    with f2:
+        show_relevant_only = st.checkbox(
+            "Relevant jobs only",
+            value=True
+        )
+
+    with f3:
+        hide_seniority_flags = st.checkbox(
+            "Hide seniority flags",
+            value=True
+        )
+
+    with f4:
+        max_jobs_to_show = st.selectbox(
+            "Jobs to show",
+            options=[10, 25, 50, 100],
+            index=1
+        )
+
+    companies = sorted(jobs_df["company"].dropna().unique().tolist())
+    score_labels = sorted(jobs_df["score_label"].dropna().unique().tolist())
+    freshness_options = sorted(jobs_df["freshness_status"].dropna().unique().tolist())
+    status_options = sorted(jobs_df["status"].dropna().unique().tolist())
+
+    c1, c2 = st.columns(2)
+
+    with c1:
+        selected_companies = st.multiselect(
+            "Companies",
+            options=companies,
+            default=companies
+        )
+
+        selected_labels = st.multiselect(
+            "Score labels",
+            options=score_labels,
+            default=score_labels
+        )
+
+    with c2:
+        selected_freshness = st.multiselect(
+            "Freshness",
+            options=freshness_options,
+            default=freshness_options
+        )
+
+        selected_statuses = st.multiselect(
+            "Application status",
+            options=status_options,
+            default=status_options
+        )
+
+    keyword_search = st.text_input(
+        "Search title/company/skills",
+        placeholder="Try: machine learning, data scientist, python, computer vision..."
     )
 
-    status_df.columns = ["status", "count"]
+    filtered_df = jobs_df.copy()
 
-    st.dataframe(
-        status_df,
-        use_container_width=True,
-        hide_index=True
+    filtered_df = filtered_df[
+        (filtered_df["ats_match_score"] >= min_score)
+        & (filtered_df["company"].isin(selected_companies))
+        & (filtered_df["score_label"].isin(selected_labels))
+        & (filtered_df["freshness_status"].isin(selected_freshness))
+        & (filtered_df["status"].isin(selected_statuses))
+    ]
+
+    if show_relevant_only:
+        filtered_df = filtered_df[filtered_df["is_relevant"] == True]
+
+    if hide_seniority_flags:
+        filtered_df = filtered_df[filtered_df["has_seniority_flags"] == False]
+
+    if keyword_search.strip():
+        query = keyword_search.strip().lower()
+        filtered_df = filtered_df[
+            filtered_df.apply(
+                lambda row: query in " ".join(
+                    [
+                        str(row.get("company", "")),
+                        str(row.get("title", "")),
+                        str(row.get("matched_skills", "")),
+                        str(row.get("matched_keywords", "")),
+                        str(row.get("score_reason", ""))
+                    ]
+                ).lower(),
+                axis=1
+            )
+        ]
+
+    filtered_df = filtered_df.sort_values(
+        ["ats_match_score", "date_found"],
+        ascending=[False, False]
     )
+
+    st.markdown("### Applied filters summary")
+    s1, s2, s3, s4 = st.columns(4)
+    s1.metric("Visible jobs", len(filtered_df))
+    s2.metric("Min score", min_score)
+    s3.metric("Strong visible", int((filtered_df["ats_match_score"] >= 80).sum()))
+    s4.metric("No seniority flags", int((filtered_df["has_seniority_flags"] == False).sum()))
+
+    st.markdown("### Scout Board")
+
+    if filtered_df.empty:
+        st.info("No jobs match your current filters.")
+    else:
+        display_df = filtered_df.head(max_jobs_to_show).copy()
+
+        st.markdown(
+            f"""
+            <div class="section-card">
+                <b>{len(filtered_df)}</b> jobs match your current filters. Showing top <b>{len(display_df)}</b>.
+                Jobs are ranked by ATS match score, freshness, and your profile signals.
+            </div>
+                    """,
+            unsafe_allow_html=True
+        )
+
+        for _, job in display_df.iterrows():
+            job_dict = job.to_dict()
+
+            seniority_flags = split_semicolon_text(job_dict.get("seniority_flags", ""))
+            matched_skills = split_semicolon_text(job_dict.get("matched_skills", ""))
+            matched_roles = split_semicolon_text(job_dict.get("matched_roles", ""))
+            project_hits = split_semicolon_text(job_dict.get("project_relevance_hits", ""))
+
+            score = int(job_dict.get("ats_match_score", 0))
+            description_preview = escape(
+                truncate_text(job_dict.get("description", ""), max_chars=360)
+            )
+
+            title = escape(safe_text(job_dict.get("title")))
+            company = escape(safe_text(job_dict.get("company")))
+            location = escape(safe_text(job_dict.get("location")))
+            freshness = escape(safe_text(job_dict.get("freshness_status")))
+            status = escape(safe_text(job_dict.get("status")))
+            ats_type = escape(safe_text(job_dict.get("ats_type")))
+            score_label = escape(safe_text(job_dict.get("score_label")))
+
+            if score >= 80:
+                score_style = "green"
+            elif score >= 65:
+                score_style = "warning"
+            else:
+                score_style = "blue"
+
+            with st.container(border=False, key=f"scout_card_{job_dict['job_id']}"):
+                st.markdown(
+                    f"""
+                    <div class="job-card-top">
+                        <div>
+                            <div class="job-title">{score_color(score)} {title}</div>
+                            <div class="job-meta">
+                                <b>{company}</b> · {location} · {freshness} · {status}
+                            </div>
+                            <div>
+                                {badge_html(score_label, score_style)}
+                                {badge_html(ats_type, "blue")}
+                                {badge_html("Role " + str(int(job_dict.get("role_score", 0))), "blue")}
+                                {badge_html("Skills " + str(int(job_dict.get("skill_score", 0))), "green")}
+                                {badge_html("Exp " + str(int(job_dict.get("experience_score", 0))), "warning")}
+                            </div>
+                        </div>
+                        <div>
+                            <div class="score-pill">{score}</div>
+                            <div class="score-caption">Match</div>
+                        </div>
+                    </div>
+
+                    <div class="desc-preview">
+                        {description_preview}
+                    </div>
+                    """,
+                    unsafe_allow_html=True
+                    )
+
+                if matched_roles:
+                    st.markdown(
+                        f"""
+                        <div class="mini-label">Role Signals</div>
+                        <div>{render_badges(matched_roles, "blue", limit=6)}</div>
+                                            """,
+                                            unsafe_allow_html=True
+                        )
+
+                if matched_skills:
+                    st.markdown(
+                        f"""
+                        <div class="mini-label">Matched Skills</div>
+                        <div>{render_badges(matched_skills, "green", limit=10)}</div>
+                                            """,
+                                            unsafe_allow_html=True
+                    )
+
+                if project_hits:
+                    st.markdown(
+                        f"""
+                        <div class="mini-label">Project Relevance</div>
+                        <div>{render_badges(project_hits, "blue", limit=6)}</div>
+                                            """,
+                                            unsafe_allow_html=True
+                    )
+
+                if seniority_flags:
+                    st.markdown(
+                        f"""
+                        <div class="mini-label">Seniority Flags</div>
+                        <div>{render_badges(seniority_flags, "danger", limit=8)}</div>
+                                            """,
+                                            unsafe_allow_html=True
+                    )
+
+                st.markdown(
+                    '<div class="scout-actions-label">Actions</div>',
+                    unsafe_allow_html=True
+                )
+
+                b1, b2, b3, b4 = st.columns([1.25, 1, 1, 1])
+
+                with b1:
+                    with st.container(key=f"btn_report_{job_dict['job_id']}"):
+                        if st.button(
+                            "📋 Scout Report",
+                            key=f"details_{job_dict['job_id']}",
+                            use_container_width=True
+                        ):
+                            show_job_dialog(job_dict)
+
+                with b2:
+                    with st.container(key=f"btn_apply_{job_dict['job_id']}"):
+                        st.link_button(
+                            "🚀 Apply",
+                            job_dict["job_url"],
+                            use_container_width=True
+                        )
+
+                with b3:
+                    with st.container(key=f"btn_save_{job_dict['job_id']}"):
+                        if st.button(
+                            "⭐ Save",
+                            key=f"save_{job_dict['job_id']}",
+                            use_container_width=True
+                        ):
+                            update_job_status(job_dict["job_id"], "saved")
+                            st.toast("Saved job")
+                            st.rerun()
+
+                with b4:
+                    with st.container(key=f"btn_ignore_{job_dict['job_id']}"):
+                        if st.button(
+                            "🙈 Ignore",
+                            key=f"ignore_{job_dict['job_id']}",
+                            use_container_width=True
+                        ):
+                            update_job_status(job_dict["job_id"], "ignored")
+                            st.toast("Ignored job")
+                            st.rerun()
+            

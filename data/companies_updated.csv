@@ -1,0 +1,52 @@
+company,career_url,ats_type,ats_slug,workday_tenant,workday_site,workday_server,workday_host,keywords,is_active,max_pages,limit
+OpenAI,https://openai.com/careers/search/,ashby,openai,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Anthropic,https://www.anthropic.com/jobs,greenhouse,anthropic,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Workday,https://workday.wd5.myworkdayjobs.com/Workday,workday,,workday,Workday,wd5,workday.wd5.myworkdayjobs.com,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Spotify,https://www.lifeatspotify.com/jobs,lever,spotify,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Netflix,https://explore.jobs.netflix.net/careers,custom_netflix,,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,FALSE,3,50
+ThermoFisher,https://thermofisher.wd5.myworkdayjobs.com/ThermoFisherCareers/,workday,,thermofisher,ThermoFisherCareers,wd5,thermofisher.wd5.myworkdayjobs.com,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Google,https://careers.google.com/jobs/results/,custom_google,,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Microsoft,https://jobs.careers.microsoft.com/global/en/search,custom_microsoft,,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Amazon,https://www.amazon.jobs/en/search,custom_amazon,,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Apple,https://jobs.apple.com/en-us/search,custom_apple,,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+NVIDIA,https://nvidia.wd5.myworkdayjobs.com/NVIDIAExternalCareerSite,workday,,nvidia,NVIDIAExternalCareerSite,wd5,nvidia.wd5.myworkdayjobs.com,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Adobe,https://adobe.wd5.myworkdayjobs.com/external_experienced,workday,,adobe,external_experienced,wd5,adobe.wd5.myworkdayjobs.com,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Stripe,https://stripe.com/jobs/search,greenhouse,stripe,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Airbnb,https://careers.airbnb.com/,greenhouse,airbnb,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Databricks,https://www.databricks.com/company/careers/open-positions,greenhouse,databricks,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Figma,https://www.figma.com/careers/,greenhouse,figma,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Notion,https://www.notion.so/careers,ashby,notion,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Coinbase,https://www.coinbase.com/careers/positions,greenhouse,coinbase,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Cloudflare,https://www.cloudflare.com/careers/jobs/,greenhouse,cloudflare,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Datadog,https://careers.datadoghq.com/,greenhouse,datadog,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+MongoDB,https://www.mongodb.com/careers/departments,greenhouse,mongodb,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Reddit,https://www.redditinc.com/careers,greenhouse,reddit,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Lyft,https://www.lyft.com/careers,greenhouse,lyft,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Pinterest,https://www.pinterestcareers.com/,greenhouse,pinterest,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+DoorDash,https://careersatdoordash.com/,greenhouse,doordashusa,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Robinhood,https://careers.robinhood.com/,greenhouse,robinhood,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Instacart,https://instacart.careers/current-openings/,greenhouse,instacart,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Discord,https://discord.com/careers,greenhouse,discord,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Dropbox,https://jobs.dropbox.com/,greenhouse,dropbox,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+GitLab,https://about.gitlab.com/jobs/,greenhouse,gitlab,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Twitch,https://www.twitch.tv/jobs/en/,greenhouse,twitch,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Scale AI,https://scale.com/careers,greenhouse,scaleai,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Cohere,https://cohere.com/careers,ashby,cohere,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Perplexity AI,https://jobs.ashbyhq.com/perplexity,ashby,perplexity,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Ramp,https://ramp.com/careers,ashby,ramp,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Linear,https://linear.app/careers,ashby,linear,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Cursor,https://www.cursor.com/careers,ashby,cursor,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Replit,https://replit.com/site/careers,ashby,replit,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Boston Consulting Group,https://careers.bcg.com/global/en/search-results,custom_bcg,,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,2,50
+Accenture,https://accenture.wd103.myworkdayjobs.com/AccentureCareers/,workday,,accenture,AccentureCareers,wd103,accenture.wd103.myworkdayjobs.com,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,2,50
+Deloitte,https://www2.deloitte.com/us/en/careers/careers.html,custom_deloitte,,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Epic Systems,https://careers.epic.com/jobs/,custom_epic,,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+AstraZeneca,https://careers.astrazeneca.com/search-jobs,custom_astrazeneca,,astrazeneca,Careers,wd3,astrazeneca.wd3.myworkdayjobs.com,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,2,50
+Bloomberg,https://bloomberg.avature.net/careers/SearchJobs,custom_bloomberg,,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Palantir,https://www.palantir.com/careers/,custom_palantir,,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Salesforce,https://careers.salesforce.com/en/jobs/,custom_salesforce,,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Snowflake,https://careers.snowflake.com/us/en,ashby,snowflake,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Atlassian,https://www.atlassian.com/company/careers/all-jobs,custom_atlassian,atlassian,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Twilio,https://careers.twilio.com/,greenhouse,twilio,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
+Uber,https://www.uber.com/us/en/careers/list/,custom_uber,,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,1,50
+Duolingo,https://careers.duolingo.com/,greenhouse,duolingo,,,,,data analyst;machine learning;data scientist;software engineer;data engineer;applied ai;applied ml,TRUE,3,50
